@@ -7,7 +7,7 @@ FROM node:22-bookworm-slim
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates git openssh-client tzdata \
  && rm -rf /var/lib/apt/lists/* \
- && npm install -g bun@1.4.2 pnpm@10.11.1
+ && npm install -g bun@1.4.4 pnpm@10.11.1
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
