@@ -7,6 +7,7 @@
  * the bridge swaps in the feed at fetch time and reports it under that URL.
  */
 import type { BrowserBridge } from "@homepage/agent-core";
+import { fetchWithRetry } from "./fetch-retry";
 
 const REDDIT_HOSTS = new Set(["reddit.com", "www.reddit.com", "old.reddit.com", "new.reddit.com"]);
 const SUBS = /^[A-Za-z0-9_+]{2,200}$/;
@@ -34,7 +35,7 @@ export function redditFeedFor(url: string): string | null {
 type FetchText = (url: string) => Promise<string>;
 
 const defaultFetch: FetchText = async (url) => {
-  const res = await fetch(url, { headers: { "user-agent": USER_AGENT }, signal: AbortSignal.timeout(15_000) });
+  const res = await fetchWithRetry(url, { headers: { "user-agent": USER_AGENT } }, { timeoutMs: 15_000 });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();
 };
