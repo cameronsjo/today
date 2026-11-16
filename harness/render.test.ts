@@ -14,6 +14,8 @@ test("server-renders the component and bundles a self-contained hydration script
   expect(html).toContain('static.cloudflareinsights.com/beacon.min.js');
   expect(html).toContain(':root[data-theme="night"]');
   expect(html).toContain('[data-theme-toggle]');
+  expect(html).toContain('<link rel="apple-touch-icon" href="apple-touch-icon.png">');
+  expect(html).toContain('<link rel="icon" href="icon.svg" type="image/svg+xml">');
   // Bundled, not imported from a CDN at view time.
   expect(script).not.toMatch(/from\s*["']react["']/);
   expect(script).toContain("Hacker News!");
