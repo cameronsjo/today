@@ -85,6 +85,10 @@ export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: st
 <meta name="robots" content="noindex">
 <meta name="built-at" content="${builtAt.toISOString()}">
 <title>The Context</title>
+<meta name="apple-mobile-web-app-title" content="The Context">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#f5ead0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#292c33" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">

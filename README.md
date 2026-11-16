@@ -41,6 +41,9 @@ token: list them as `https://x.com/<handle>` and set `RSSHUB_URL`.
   `hosted/instructions.md`. Both are baked into the image, which
   `.github/workflows/image.yml` publishes to `ghcr.io/<you>/<repo>:main` on
   every push to `main`.
+- **Its icon:** `hosted/icon/` holds the home-screen icon (`apple-touch-icon.png`,
+  180px) and the favicons (`icon.svg`, `favicon-32.png`). The build copies them
+  next to `index.html`.
 - **Running it:** `docker/Dockerfile`. It needs `ANTHROPIC_API_KEY`,
   `PAGES_REPO` (`owner/repo`) and `DEPLOY_KEY_B64` (a base64-encoded deploy key
   with write access). Optional: `RSSHUB_URL`, `BUILD_AT` (default `06:00`,

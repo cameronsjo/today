@@ -13,7 +13,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { MODEL_CHOICES, normalizeReadingList, runHomepageBuild, type BrowserBridge, type HomepageModel } from "@homepage/agent-core";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { FileKVStore, STATE_PATH, nodeBridge } from "./node-bridge";
 import { renderSite } from "./render";
@@ -76,6 +76,8 @@ async function main() {
   writeFileSync(join(SITE_DIR, "index.html"), html);
   writeFileSync(join(SITE_DIR, "homepage.js"), script);
   writeFileSync(join(SITE_DIR, "homepage.tsx"), tsx);
+  // The home-screen icon and favicons the page links to (see hosted/icon/).
+  cpSync(join(ROOT, "hosted/icon"), SITE_DIR, { recursive: true });
   console.log(`wrote ${SITE_DIR}/index.html (${html.length}b)`);
 }
 
