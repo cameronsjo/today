@@ -9,6 +9,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { BrowserBridge, KVStore, RawSiteMetadata } from "@homepage/agent-core";
+import { fetchWithRetry } from "./fetch-retry";
 
 /**
  * Harness state (cached agent/environment IDs, active session) and output, next to these
@@ -112,9 +113,8 @@ export const nodeBridge: BrowserBridge = {
     await Promise.all(
       urls.map(async (url) => {
         try {
-          const res = await fetch(url, {
+          const res = await fetchWithRetry(url, {
             headers: { "user-agent": "Mozilla/5.0 (homepage-agent-harness)" },
-            signal: AbortSignal.timeout(20_000),
           });
           if (!res.ok) {
             failed.push({ url, reason: `HTTP ${res.status}` });
