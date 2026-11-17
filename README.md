@@ -58,6 +58,14 @@ token: list them as `https://x.com/<handle>` and set `RSSHUB_URL`.
   Browsers won't let you set the new tab page to a URL, so
   [`apps/newtab-redirect`](apps/newtab-redirect/README.md) is a tiny extension
   that does only that (Safari can do it natively).
+- **New-edition notifications (optional):** run `bun harness/push.ts --keys`
+  and set the two printed values, `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`,
+  on the container (`VAPID_SUBJECT` is optional). The next edition shows a
+  "Notify me" button. On iOS it appears only in the home-screen app, since
+  Safari tabs can't receive push. Tap it, allow notifications, and copy the
+  subscription it shows into `PUSH_SUBSCRIPTIONS` (one object, or a JSON list
+  for several devices). From then on each publish sends the lead headline to
+  every device. The build log says when a subscription has expired.
 
 The page is public to anyone with the URL (it's marked `noindex`), but it only
 contains what it read from public pages. Build it locally with

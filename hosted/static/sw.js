@@ -69,3 +69,41 @@ self.addEventListener("fetch", (event) => {
   if (FONT_HOSTS.has(url.hostname)) event.respondWith(cacheFirst(request));
   else if (url.origin === self.location.origin && url.pathname.startsWith(scope().pathname)) event.respondWith(networkFirst(request));
 });
+
+// Web Push: the builder sends {title, body, url} when a new edition is published.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data && event.data.text() };
+  }
+  const url = new URL(data.url || "./", scope()).href;
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(data.title || "The Context", {
+        body: data.body || "Today's edition is out.",
+        icon: "icon-192.png",
+        badge: "icon-192.png",
+        tag: "edition",
+        data: { url },
+      }),
+      // Fetch the new edition now, so it's there even if the tap comes offline.
+      fetch(scope().href, { cache: "no-store" })
+        .then((r) => (r.ok ? caches.open(CACHE).then((c) => c.put(scope().href, r)) : null))
+        .catch(() => {}),
+    ]),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || scope().href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((w) => w.url.startsWith(scope().href));
+      if (open) return open.navigate(url).then((w) => (w || open).focus()).catch(() => open.focus());
+      return self.clients.openWindow(url);
+    }),
+  );
+});

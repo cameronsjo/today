@@ -9,6 +9,8 @@ publish() {
   echo "[newtab] build started $(date -Is)"
   if pnpm --silent site:build && bash /app/docker/publish-pages.sh; then
     echo "[newtab] published $(date -Is)"
+    # Web Push to the reader's devices; skips itself unless VAPID keys and PUSH_SUBSCRIPTIONS are set.
+    bun /app/harness/push.ts "${SITE_DIR:-/app/site}" || true
   else
     echo "[newtab] build failed $(date -Is); the previous page stays up" >&2
   fi
