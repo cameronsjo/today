@@ -17,6 +17,7 @@ test("server-renders the component and bundles a self-contained hydration script
   expect(html).toContain('<link rel="apple-touch-icon" href="apple-touch-icon.png">');
   expect(html).toContain('<link rel="icon" href="icon.svg" type="image/svg+xml">');
   expect(html).toContain('<link rel="manifest" href="manifest.webmanifest">');
+  expect(html).toContain('navigator.serviceWorker.register(root+"sw.js"');
   expect(html).toContain('<meta name="apple-mobile-web-app-capable" content="yes">');
   // Bundled, not imported from a CDN at view time.
   expect(script).not.toMatch(/from\s*["']react["']/);
