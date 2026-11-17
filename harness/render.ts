@@ -65,7 +65,8 @@ const THEME_CSS = `:root{${IVORY}}
 :root[data-theme="night"]{${NIGHT}}
 html,body{margin:0;background:var(--bg);color:var(--fg)}
 details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
-details>summary::after{content:" +"}details[open]>summary::after{content:" \\2212"}`;
+details>summary::after{content:" +"}details[open]>summary::after{content:" \\2212"}
+[data-story][data-new]::before{content:"new";display:inline-block;margin:0 0 6px;padding:1px 7px;border-radius:999px;background:var(--accent);color:var(--bg);font:600 .68rem/1.5 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}`;
 /** Runs before first paint so a saved choice doesn't flash the other edition. */
 const THEME_BOOT = `try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`;
 /** Wires any [data-theme-toggle] button; delegated, so hydration can't drop it. */
@@ -90,6 +91,19 @@ if(b&&b!==built(document))location.reload();else{loaded=Date.now();busy=false}})
  */
 const OFFLINE = `if("serviceWorker"in navigator){var root=location.pathname.replace(/[^/]*$/,"").replace(/archive\\/[^/]+\\/$/,"");
 navigator.serviceWorker.register(root+"sw.js",{scope:root}).catch(function(){})}`;
+
+/**
+ * Tags stories ([data-story]) that weren't on the page at the reader's last
+ * visit, keyed by each story's first link. The seen list is per browser and
+ * saved when the page is hidden, so a story stays tagged for the whole visit.
+ * Nothing is tagged on a first visit or on archived editions.
+ */
+const NEW_MARKS = `(function(){if(/\\/archive\\//.test(location.pathname))return;var K="seen-stories",seen=null;try{seen=JSON.parse(localStorage.getItem(K)||"null")}catch(e){}
+function all(){return[].slice.call(document.querySelectorAll("[data-story]"))}
+function key(el){var a=el.querySelector("a[href]");return a?a.href:(el.textContent||"").replace(/\\s+/g," ").trim().slice(0,160)}
+function mark(){if(!seen)return;var s={};seen.forEach(function(k){s[k]=1});all().forEach(function(el){if(!s[key(el)])el.setAttribute("data-new","")})}
+function save(){var now=all().map(key),keep=(seen||[]).filter(function(k){return now.indexOf(k)<0});try{localStorage.setItem(K,JSON.stringify(keep.concat(now).slice(-600)))}catch(e){}}
+mark();setTimeout(mark,1500);addEventListener("pagehide",save);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")save()})})();`;
 
 /** index.html (server-rendered) plus homepage.js, which hydrates it. */
 export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: string; script: string }> {
@@ -125,6 +139,7 @@ export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: st
 <script>${THEME_TOGGLE}</script>
 <script>${FRESHEN}</script>
 <script>${OFFLINE}</script>
+<script>${NEW_MARKS}</script>
 <!-- Cloudflare Web Analytics, the same beacon as the rest of cameronsjo.github.io. -->
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "9db7302de886402680e0838d0f35f7db"}'></script>
 </body>
