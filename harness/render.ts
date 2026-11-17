@@ -6,6 +6,7 @@
 import { transform } from "sucrase";
 import React from "react";
 import { renderToString } from "react-dom/server";
+import { escapeHtml, leadHeadline } from "./archive-index";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -108,6 +109,7 @@ mark();setTimeout(mark,1500);addEventListener("pagehide",save);document.addEvent
 /** index.html (server-rendered) plus homepage.js, which hydrates it. */
 export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: string; script: string }> {
   const markup = renderToString(React.createElement(loadComponent(tsx)));
+  const lead = leadHeadline(markup);
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -115,7 +117,7 @@ export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: st
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="built-at" content="${builtAt.toISOString()}">
-<title>The Context</title>
+${lead ? `<meta name="lead" content="${escapeHtml(lead)}">\n` : ""}<title>The Context</title>
 <meta name="apple-mobile-web-app-title" content="The Context">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
