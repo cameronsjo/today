@@ -38,3 +38,12 @@ test("the web app manifest is valid and its icons exist", async () => {
   expect(manifest.start_url).toBe("./");
   for (const icon of manifest.icons) expect(existsSync(join(dir, icon.src))).toBe(true);
 });
+
+test("offers push only when the build has a VAPID key", async () => {
+  const without = await renderSite(COMPONENT, new Date(), { vapidPublicKey: undefined });
+  expect(without.html).not.toContain('name="vapid-key"');
+  expect(without.html).not.toContain("PUSH_SUBSCRIPTIONS");
+  const withKey = await renderSite(COMPONENT, new Date(), { vapidPublicKey: "BPub_key-1" });
+  expect(withKey.html).toContain('<meta name="vapid-key" content="BPub_key-1">');
+  expect(withKey.html).toContain("pushManager.subscribe");
+});
