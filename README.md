@@ -43,8 +43,9 @@ token: list them as `https://x.com/<handle>` and set `RSSHUB_URL`.
   every push to `main`.
 - **Its fixed files:** `hosted/static/` holds the home-screen icon
   (`apple-touch-icon.png`, 180px), the favicons (`icon.svg`, `favicon-32.png`)
-  and the web app manifest with its icons, so the page opens full-screen when
-  launched from a phone's home screen. The build copies them next to
+  the web app manifest with its icons, so the page opens full-screen when
+  launched from a phone's home screen, and `sw.js`, the service worker that
+  keeps the latest edition for reading offline. The build copies them next to
   `index.html`.
 - **Running it:** `docker/Dockerfile`. It needs `ANTHROPIC_API_KEY`,
   `PAGES_REPO` (`owner/repo`) and `DEPLOY_KEY_B64` (a base64-encoded deploy key

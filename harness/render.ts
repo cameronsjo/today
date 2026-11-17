@@ -84,6 +84,13 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 fetch(location.href,{cache:"no-store"}).then(function(r){return r.ok?r.text():""}).then(function(t){var b=t&&built(new DOMParser().parseFromString(t,"text/html"));
 if(b&&b!==built(document))location.reload();else{loaded=Date.now();busy=false}}).catch(function(){busy=false})})})();`;
 
+/**
+ * Registers the service worker at the site root, which is also where an
+ * archived copy of this page finds it (archive/YYYY-MM-DD/ is two levels down).
+ */
+const OFFLINE = `if("serviceWorker"in navigator){var root=location.pathname.replace(/[^/]*$/,"").replace(/archive\\/[^/]+\\/$/,"");
+navigator.serviceWorker.register(root+"sw.js",{scope:root}).catch(function(){})}`;
+
 /** index.html (server-rendered) plus homepage.js, which hydrates it. */
 export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: string; script: string }> {
   const markup = renderToString(React.createElement(loadComponent(tsx)));
@@ -117,6 +124,7 @@ export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: st
 <script src="homepage.js?v=${builtAt.getTime()}" defer></script>
 <script>${THEME_TOGGLE}</script>
 <script>${FRESHEN}</script>
+<script>${OFFLINE}</script>
 <!-- Cloudflare Web Analytics, the same beacon as the rest of cameronsjo.github.io. -->
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "9db7302de886402680e0838d0f35f7db"}'></script>
 </body>
