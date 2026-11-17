@@ -47,7 +47,9 @@ token: list them as `https://x.com/<handle>` and set `RSSHUB_URL`.
 - **Running it:** `docker/Dockerfile`. It needs `ANTHROPIC_API_KEY`,
   `PAGES_REPO` (`owner/repo`) and `DEPLOY_KEY_B64` (a base64-encoded deploy key
   with write access). Optional: `RSSHUB_URL`, `BUILD_AT` (default `06:00`,
-  container local time), `RUN_ON_START=true`, `HOMEPAGE_MODEL`. Mount `/data`
+  container local time), `RUN_ON_START=true`, `HOMEPAGE_MODEL`, `NOTIFY_URL`
+  (an ntfy topic URL or any plain-text webhook; a failed build POSTs the end of
+  its log there) and `NOTIFY_TOKEN` (sent as a bearer token). Mount `/data`
   to keep the agent's cached IDs between builds.
 - **Serving it:** Settings > Pages > Deploy from a branch > `gh-pages`. A failed
   build leaves the previous page up.
