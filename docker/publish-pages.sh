@@ -34,18 +34,9 @@ fi
 mkdir -p "$site/archive/$today"
 cp "$site/index.html" "$site/homepage.js" "$site/archive/$today/"
 
-# A plain list of editions, newest first.
-{
-  printf '%s\n' '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>The Context: archive</title>' \
-    '<style>:root{--bg:#f5ead0;--fg:#20203e;--accent:#7a5a10;--border:#cbb88a}@media (prefers-color-scheme: dark){:root{--bg:#292c33;--fg:#e8e6e1;--accent:#dbbb6f;--border:#4a4f5c}}' \
-    'body{margin:0;background:var(--bg);color:var(--fg);font-family:Newsreader,"Iowan Old Style",Georgia,serif}main{max-width:640px;margin:0 auto;padding:32px 16px}h1{font-style:italic;font-size:2.5rem;margin:0 0 16px}' \
-    'a{display:block;padding:10px 0;border-bottom:1px solid var(--border);color:var(--fg);text-decoration:none;font-family:"JetBrains Mono",ui-monospace,monospace}a:hover{color:var(--accent)}</style></head><body><main><h1>The Context: archive</h1>' \
-    '<a href="../">Today&#39;s edition</a>'
-  for d in $(ls -1 "$site/archive" | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort -r); do
-    printf '<a href="%s/">%s</a>\n' "$d" "$d"
-  done
-  printf '%s\n' '</main></body></html>'
-} > "$site/archive/index.html"
+# The archive index (each edition with its lead headline), and archived pages
+# pointed back at the root's icons and manifest.
+bun "$(dirname "$0")/../harness/archive-index.ts" "$site"
 
 cd "$site"
 touch .nojekyll

@@ -13,6 +13,8 @@ publish() {
   # pipefail (set above) makes the tee pipeline fail when the build does.
   if { pnpm --silent site:build && bash /app/docker/publish-pages.sh; } 2>&1 | tee "$log"; then
     echo "[newtab] published $(date -Is)"
+    # Web Push to the reader's devices; skips itself unless VAPID keys and PUSH_SUBSCRIPTIONS are set.
+    bun /app/harness/push.ts "${SITE_DIR:-/app/site}" || true
   else
     echo "[newtab] build failed $(date -Is); the previous page stays up" >&2
     # NOTIFY_URL (an ntfy topic or any plain-text webhook) gets the end of the log.
