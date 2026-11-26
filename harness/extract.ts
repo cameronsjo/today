@@ -191,7 +191,9 @@ export function formatFeedToMarkdown(
     const summary = stripTags(rawSummary).slice(0, MAX_SUMMARY_CHARS);
 
     const heading = link ? `[${title || link}](${link})` : title;
-    lines.push(date ? `- ${heading} (${date})` : `- ${heading}`);
+    const catMatch = isAtom ? block.match(/<category\b[^>]*\blabel=["'](r\/[^"']+)["']/i) : null;
+    const prefix = catMatch ? `**${decodeEntities(catMatch[1])}** · ` : "";
+    lines.push(date ? `- ${prefix}${heading} (${date})` : `- ${prefix}${heading}`);
     if (summary && summary !== title) {
       lines.push(`  ${summary}`);
     }

@@ -15,13 +15,13 @@ Layout, inside a `max-width: 1200px` centered column with padding `clamp(16px, 3
 - Below it a wrapping flex row (gap `36px 48px`): a left rail `<aside>` (`flex: 1 1 240px; min-width: 0`) and the main column (`flex: 999 1 600px; min-width: 0`), so the rail stacks above the stories on a phone.
 - Rail, top to bottom: "In this edition" as a `<nav>` of anchor links, one row per section with its two-digit number in steel mono, its name in serif and a story count; then "Patch queue" (name, version in purple mono, one-line note, optional pill); then "Dates" (steel mono date, then the event). Rail headings are small gold uppercase mono labels.
 - Main column: the lead story first, the most important item today (usually from AI Security), with a red mono kicker like "03 · AI security · the lead", a headline at `clamp(2rem, 4.4vw, 3.1rem)` weight 700, a steel mono meta line, and its parts as a two-column `<dl>` (gold mono terms). Then each section with an `id` the index links to: a header of gold mono number plus a 700-weight serif title over a 1px `var(--fg)` rule, then its stories in a grid `repeat(auto-fit, minmax(min(300px, 100%), 1fr))` with gap `0 36px`. Each story: optional mono kicker, a 1.4rem weight-600 serif headline, the blurb, a steel mono meta line, then its Full breakdown when it has one.
-- Footer, after a 3px double rule: "Ops wire" (steel mono time, then the linked item) and "Coverage notes" (feeds that failed or had nothing new, one line each), then a steel mono line "next edition 06:00 · built on the nas · " followed by a link to past editions, `<a href="archive/">archive</a>`.
+- Footer, after a 3px double rule: "Ops wire" (steel mono time, then the linked item) and "Coverage notes" (only actual feed failures or quiet feeds, one line each — skip noting that browsing history is empty on server builds), then a steel mono line "next edition 06:00 · built on the nas · " followed by a link to past editions, `<a href="archive/">archive</a>`.
 - It must work at 390px wide: no fixed widths over 360px and no horizontal scrolling.
 
 ## What's relevant
 
 I care about AI and the tools I actually use, not enterprise IT. Only include a security or ops item when it touches one of:
-- AI models, agents, coding agents, MCP, and the labs that make them (Anthropic above all);
+- AI models, agents, coding agents, MCP, and the labs that make them (Anthropic and Google DeepMind / Gemini above all);
 - self-hosting and homelab software: containers, Kubernetes, reverse proxies, identity and SSO, VPN and mesh networking, DNS filtering, media servers, NAS operating systems;
 - developer tooling: GitHub and GitHub Actions, package registries, Node, Bun, Python and Go, terminals and editors;
 - macOS, iOS and consumer routers or network gear.
@@ -30,7 +30,7 @@ Leave out enterprise appliances and products (VPN concentrators, firewalls, ADCs
 
 ## Sections
 
-In this order: AI, From the Claude team (posts from the x.com accounts on the reading list, plus Claude Code releases), AI Security, Homelab & Ops, From Reddit (grouped by subreddit).
+In this order: AI, From the labs (posts from the Anthropic and Google DeepMind / Gemini x.com accounts on the reading list, plus Claude Code & Gemini CLI releases and official DeepMind / Gemini blogs & changelogs), AI Security, Homelab & Ops, From Reddit (grouped by subreddit).
 Always read the x.com accounts on the reading list; they arrive as feeds of recent posts. Summarise what each person actually said and link the post itself. If a feed has nothing from the last week, say so in one line instead of resurfacing old posts.
 Lead with what's genuinely new since yesterday. Keep each blurb to two or three sentences and say why it matters to me.
 
