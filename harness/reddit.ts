@@ -7,12 +7,13 @@
  * the bridge swaps in the feed at fetch time and reports it under that URL.
  */
 import type { BrowserBridge } from "@homepage/agent-core";
+import { createHostPacer } from "./extract";
 
 const REDDIT_HOSTS = new Set(["reddit.com", "www.reddit.com", "old.reddit.com", "new.reddit.com"]);
 const SUBS = /^[A-Za-z0-9_+]{2,200}$/;
 const SORTS = new Set(["hot", "new", "top", "rising", "best"]);
 /** Reddit asks API clients for a descriptive User-Agent and throttles generic ones. */
-const USER_AGENT = "homepage-builder/1.0 (personal daily digest)";
+const USER_AGENT = "linux:cameronsjo-today:v1.0 (personal daily digest)";
 
 /** The RSS feed for a subreddit listing URL, or null when the URL isn't one. */
 export function redditFeedFor(url: string): string | null {
@@ -39,7 +40,12 @@ const defaultFetch: FetchText = async (url) => {
   return res.text();
 };
 
-export function withReddit(bridge: BrowserBridge, fetchText: FetchText = defaultFetch): BrowserBridge {
+export function withReddit(
+  bridge: BrowserBridge,
+  fetchText: FetchText = defaultFetch,
+  pacingMs = fetchText === defaultFetch ? 2500 : 0,
+): BrowserBridge {
+  const pace = createHostPacer(pacingMs);
   return {
     getHistory: bridge.getHistory,
     async getPageHtml({ urls, loadDelayMs }) {
@@ -49,8 +55,15 @@ export function withReddit(bridge: BrowserBridge, fetchText: FetchText = default
           urls
             .filter((url) => redditFeedFor(url))
             .map(async (url) => {
+              const feedUrl = redditFeedFor(url)!;
               try {
-                return { page: { url, title: `Reddit feed: ${new URL(url).pathname}`, html: await fetchText(redditFeedFor(url)!) } };
+                return {
+                  page: {
+                    url,
+                    title: `Reddit feed: ${new URL(url).pathname}`,
+                    html: await pace(feedUrl, () => fetchText(feedUrl)),
+                  },
+                };
               } catch (err) {
                 return { failed: { url, reason: `Reddit feed: ${(err as Error).message}` } };
               }

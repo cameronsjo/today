@@ -9,6 +9,17 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { BrowserBridge, KVStore, RawSiteMetadata } from "@homepage/agent-core";
+import {
+  BROWSER_FETCH_HEADERS,
+  FEED_FETCH_HEADERS,
+  createHostPacer,
+  discoverFeedUrl,
+  extractPage,
+  formatFeedToMarkdown,
+  isFeedContent,
+  isLikelyListingPage,
+  wellKnownFeedCandidates,
+} from "./extract";
 
 /**
  * Harness state (cached agent/environment IDs, active session) and output, next to these
@@ -83,51 +94,97 @@ export function fixtureHistory(now = Date.now()): RawSiteMetadata[] {
   ];
 }
 
-/** Crude sanitizer approximating the extension's cleanHtmlForLLM (lib/scraper.ts). */
-function cleanHtml(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<svg[\s\S]*?<\/svg>/gi, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/\son\w+="[^"]*"/gi, "")
-    .replace(/\n{3,}/g, "\n\n");
+export interface NodeBridgeOptions {
+  fetchFn?: typeof fetch;
+  /** Minimum delay (ms) between requests to the same hostname. Defaults to 2000ms. */
+  pacingMs?: number;
 }
 
-function titleOf(html: string, url: string): string {
-  const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  return m ? m[1].trim().slice(0, 200) : url;
-}
+export function createNodeBridge(opts: NodeBridgeOptions = {}): BrowserBridge {
+  const fetchFn = opts.fetchFn ?? fetch;
+  const pace = createHostPacer(opts.pacingMs ?? 2000);
 
-export const nodeBridge: BrowserBridge = {
-  async getHistory() {
-    const sites = fixtureHistory();
-    return { sites, totalSitesSeen: sites.length };
-  },
+  async function tryFetchFeed(feedUrl: string, reportedUrl: string): Promise<{ url: string; title: string; html: string } | null> {
+    try {
+      const res = await pace(feedUrl, () =>
+        fetchFn(feedUrl, { headers: FEED_FETCH_HEADERS, signal: AbortSignal.timeout(15_000) }),
+      );
+      if (!res.ok) return null;
+      const body = await res.text();
+      const ct = res.headers.get("content-type") ?? "";
+      if (!isFeedContent(body, ct)) return null;
+      const formatted = formatFeedToMarkdown(body, reportedUrl);
+      if (!formatted) return null;
+      return { url: reportedUrl, title: formatted.title, html: formatted.content };
+    } catch {
+      return null;
+    }
+  }
 
-  async getPageHtml({ urls }) {
-    const pages: Array<{ url: string; title: string; html: string }> = [];
-    const failed: Array<{ url: string; reason: string }> = [];
+  return {
+    async getHistory() {
+      const sites = fixtureHistory();
+      return { sites, totalSitesSeen: sites.length };
+    },
 
-    await Promise.all(
-      urls.map(async (url) => {
-        try {
-          const res = await fetch(url, {
-            headers: { "user-agent": "Mozilla/5.0 (homepage-agent-harness)" },
-            signal: AbortSignal.timeout(20_000),
-          });
-          if (!res.ok) {
-            failed.push({ url, reason: `HTTP ${res.status}` });
-            return;
+    async getPageHtml({ urls }) {
+      const pages: Array<{ url: string; title: string; html: string }> = [];
+      const failed: Array<{ url: string; reason: string }> = [];
+
+      await Promise.all(
+        urls.map(async (url) => {
+          try {
+            const res = await pace(url, () =>
+              fetchFn(url, {
+                headers: BROWSER_FETCH_HEADERS,
+                signal: AbortSignal.timeout(20_000),
+              }),
+            );
+
+            // If an HTML listing is bot-blocked (403), probe standard feed paths automatically.
+            if (res.status === 403) {
+              for (const candidate of wellKnownFeedCandidates(url)) {
+                const feedPage = await tryFetchFeed(candidate, url);
+                if (feedPage) {
+                  pages.push(feedPage);
+                  return;
+                }
+              }
+              failed.push({ url, reason: "HTTP 403" });
+              return;
+            }
+
+            if (!res.ok) {
+              failed.push({ url, reason: `HTTP ${res.status}` });
+              return;
+            }
+
+            const raw = await res.text();
+            const ct = res.headers.get("content-type") ?? "";
+
+            // For HTML listing pages, prefer an advertised RSS/Atom feed when available.
+            if (!isFeedContent(raw, ct) && !ct.toLowerCase().includes("text/markdown")) {
+              const feedUrl = discoverFeedUrl(raw, url);
+              if (feedUrl && isLikelyListingPage(raw, url, feedUrl)) {
+                const feedPage = await tryFetchFeed(feedUrl, url);
+                if (feedPage) {
+                  pages.push(feedPage);
+                  return;
+                }
+              }
+            }
+
+            const extracted = extractPage(raw, url, ct);
+            pages.push({ url, title: extracted.title, html: extracted.content });
+          } catch (err) {
+            failed.push({ url, reason: String(err) });
           }
-          const raw = await res.text();
-          pages.push({ url, title: titleOf(raw, url), html: cleanHtml(raw) });
-        } catch (err) {
-          failed.push({ url, reason: String(err) });
-        }
-      }),
-    );
+        }),
+      );
 
-    return { pages, failed };
-  },
-};
+      return { pages, failed };
+    },
+  };
+}
+
+export const nodeBridge: BrowserBridge = createNodeBridge();
