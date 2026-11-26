@@ -29,7 +29,7 @@ test("formats RSS 2.0 feeds into compact Markdown", () => {
       </item>
     </channel></rss>`;
   expect(isFeedContent(rss, "application/rss+xml")).toBe(true);
-  const out = formatFeedToMarkdown(rss, "https://example.com/ai/");
+  const out = formatFeedToMarkdown(rss, "https://example.com/ai/", { nowMs: Date.parse("2026-11-26T12:00:00Z") });
   expect(out).not.toBeNull();
   expect(out!.title).toBe("Example AI Desk");
   expect(out!.content).toContain("# Example AI Desk");
@@ -48,12 +48,41 @@ test("formats Atom feeds into compact Markdown", () => {
         <summary>Faster startup and better diff rendering.</summary>
       </entry>
     </feed>`;
-  const out = formatFeedToMarkdown(atom, "https://github.com/anthropics/claude-code/releases");
+  const out = formatFeedToMarkdown(atom, "https://github.com/anthropics/claude-code/releases", {
+    nowMs: Date.parse("2026-11-26T12:00:00Z"),
+  });
   expect(out).not.toBeNull();
   expect(out!.content).toContain(
     "- [v2.1.0](https://github.com/anthropics/claude-code/releases/tag/v2.1.0) (2026-11-25)",
   );
   expect(out!.content).toContain("Faster startup and better diff rendering.");
+});
+
+test("drops stale RSS entries older than maxAgeDays and notes the latest date when quiet", () => {
+  const rss = `<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0"><channel>
+      <title>Quiet Blog</title>
+      <item>
+        <title>Old Post</title>
+        <link>https://example.com/old</link>
+        <pubDate>Tue, 13 Oct 2026 10:00:00 GMT</pubDate>
+      </item>
+      <item>
+        <title>Fresh Post</title>
+        <link>https://example.com/fresh</link>
+        <pubDate>Wed, 25 Nov 2026 10:00:00 GMT</pubDate>
+      </item>
+    </channel></rss>`;
+  const nowMs = Date.parse("2026-11-26T12:00:00Z");
+  const mixed = formatFeedToMarkdown(rss, "https://example.com/feed/", { maxAgeDays: 7, nowMs });
+  expect(mixed!.content).toContain("Fresh Post");
+  expect(mixed!.content).not.toContain("Old Post");
+
+  const staleOnly = formatFeedToMarkdown(rss.replace("25 Nov 2026", "01 Oct 2026"), "https://example.com/feed/", {
+    maxAgeDays: 7,
+    nowMs,
+  });
+  expect(staleOnly!.content).toContain("No new entries in the last 7 days (latest: 2026-10-13).");
 });
 
 test("discovers primary alternate feed and skips comment feeds", () => {
