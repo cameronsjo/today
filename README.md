@@ -41,13 +41,18 @@ token: list them as `https://x.com/<handle>` and set `RSSHUB_URL`.
   `hosted/instructions.md`. Both are baked into the image, which
   `.github/workflows/image.yml` publishes to `ghcr.io/<you>/<repo>:main` on
   every push to `main`.
-- **Its icon:** `hosted/icon/` holds the home-screen icon (`apple-touch-icon.png`,
-  180px) and the favicons (`icon.svg`, `favicon-32.png`). The build copies them
-  next to `index.html`.
+- **Its fixed files:** `hosted/static/` holds the home-screen icon
+  (`apple-touch-icon.png`, 180px), the favicons (`icon.svg`, `favicon-32.png`)
+  the web app manifest with its icons, so the page opens full-screen when
+  launched from a phone's home screen, and `sw.js`, the service worker that
+  keeps the latest edition for reading offline. The build copies them next to
+  `index.html`.
 - **Running it:** `docker/Dockerfile`. It needs `ANTHROPIC_API_KEY`,
   `PAGES_REPO` (`owner/repo`) and `DEPLOY_KEY_B64` (a base64-encoded deploy key
   with write access). Optional: `RSSHUB_URL`, `BUILD_AT` (default `06:00`,
-  container local time), `RUN_ON_START=true`, `HOMEPAGE_MODEL`. Mount `/data`
+  container local time), `RUN_ON_START=true`, `HOMEPAGE_MODEL`, `NOTIFY_URL`
+  (an ntfy topic URL or any plain-text webhook; a failed build POSTs the end of
+  its log there) and `NOTIFY_TOKEN` (sent as a bearer token). Mount `/data`
   to keep the agent's cached IDs between builds.
 - **Serving it:** Settings > Pages > Deploy from a branch > `gh-pages`. A failed
   build leaves the previous page up.
@@ -55,6 +60,14 @@ token: list them as `https://x.com/<handle>` and set `RSSHUB_URL`.
   Browsers won't let you set the new tab page to a URL, so
   [`apps/newtab-redirect`](apps/newtab-redirect/README.md) is a tiny extension
   that does only that (Safari can do it natively).
+- **New-edition notifications (optional):** run `bun harness/push.ts --keys`
+  and set the two printed values, `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`,
+  on the container (`VAPID_SUBJECT` is optional). The next edition shows a
+  "Notify me" button. On iOS it appears only in the home-screen app, since
+  Safari tabs can't receive push. Tap it, allow notifications, and copy the
+  subscription it shows into `PUSH_SUBSCRIPTIONS` (one object, or a JSON list
+  for several devices). From then on each publish sends the lead headline to
+  every device. The build log says when a subscription has expired.
 
 The page is public to anyone with the URL (it's marked `noindex`), but it only
 contains what it read from public pages. Build it locally with

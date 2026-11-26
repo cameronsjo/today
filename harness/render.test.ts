@@ -16,6 +16,10 @@ test("server-renders the component and bundles a self-contained hydration script
   expect(html).toContain('[data-theme-toggle]');
   expect(html).toContain('<link rel="apple-touch-icon" href="apple-touch-icon.png">');
   expect(html).toContain('<link rel="icon" href="icon.svg" type="image/svg+xml">');
+  expect(html).toContain('<link rel="manifest" href="manifest.webmanifest">');
+  expect(html).toContain('navigator.serviceWorker.register(root+"sw.js"');
+  expect(html).toContain('[data-story][data-new]::before');
+  expect(html).toContain('<meta name="apple-mobile-web-app-capable" content="yes">');
   // Bundled, not imported from a CDN at view time.
   expect(script).not.toMatch(/from\s*["']react["']/);
   expect(script).toContain("Hacker News!");
@@ -23,4 +27,23 @@ test("server-renders the component and bundles a self-contained hydration script
 
 test("rejects components that import anything but React", async () => {
   await expect(renderSite(`import x from 'lodash'; export default function A() { return x }`, new Date())).rejects.toThrow(/only "react"/);
+});
+
+test("the web app manifest is valid and its icons exist", async () => {
+  const { existsSync, readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const dir = join(import.meta.dir, "../hosted/static");
+  const manifest = JSON.parse(readFileSync(join(dir, "manifest.webmanifest"), "utf-8"));
+  expect(manifest.display).toBe("standalone");
+  expect(manifest.start_url).toBe("./");
+  for (const icon of manifest.icons) expect(existsSync(join(dir, icon.src))).toBe(true);
+});
+
+test("offers push only when the build has a VAPID key", async () => {
+  const without = await renderSite(COMPONENT, new Date(), { vapidPublicKey: undefined });
+  expect(without.html).not.toContain('name="vapid-key"');
+  expect(without.html).not.toContain("PUSH_SUBSCRIPTIONS");
+  const withKey = await renderSite(COMPONENT, new Date(), { vapidPublicKey: "BPub_key-1" });
+  expect(withKey.html).toContain('<meta name="vapid-key" content="BPub_key-1">');
+  expect(withKey.html).toContain("pushManager.subscribe");
 });

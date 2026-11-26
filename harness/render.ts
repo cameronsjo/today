@@ -6,6 +6,7 @@
 import { transform } from "sucrase";
 import React from "react";
 import { renderToString } from "react-dom/server";
+import { escapeHtml, leadHeadline } from "./archive-index";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -65,7 +66,8 @@ const THEME_CSS = `:root{${IVORY}}
 :root[data-theme="night"]{${NIGHT}}
 html,body{margin:0;background:var(--bg);color:var(--fg)}
 details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
-details>summary::after{content:" +"}details[open]>summary::after{content:" \\2212"}`;
+details>summary::after{content:" +"}details[open]>summary::after{content:" \\2212"}
+[data-story][data-new]::before{content:"new";display:inline-block;margin:0 0 6px;padding:1px 7px;border-radius:999px;background:var(--accent);color:var(--bg);font:600 .68rem/1.5 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}`;
 /** Runs before first paint so a saved choice doesn't flash the other edition. */
 const THEME_BOOT = `try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`;
 /** Wires any [data-theme-toggle] button; delegated, so hydration can't drop it. */
@@ -74,9 +76,69 @@ function label(){document.querySelectorAll("[data-theme-toggle]").forEach(functi
 document.addEventListener("click",function(e){if(!e.target.closest||!e.target.closest("[data-theme-toggle]"))return;r.dataset.theme=night()?"ivory":"night";try{localStorage.setItem("theme",r.dataset.theme)}catch(x){}label()});
 label();setTimeout(label,1500)})();`;
 
+/**
+ * Opened from the home screen, the page runs full-screen with no reload
+ * button, and iOS keeps it alive for days. When it comes back to the front
+ * after a while, check whether a newer edition is out and reload if so.
+ */
+const FRESHEN = `(function(){var loaded=Date.now(),busy=false;function built(d){var m=d.querySelector('meta[name="built-at"]');return m&&m.content}
+document.addEventListener("visibilitychange",function(){if(document.visibilityState!=="visible"||busy||Date.now()-loaded<15*60*1000)return;busy=true;
+fetch(location.href,{cache:"no-store"}).then(function(r){return r.ok?r.text():""}).then(function(t){var b=t&&built(new DOMParser().parseFromString(t,"text/html"));
+if(b&&b!==built(document))location.reload();else{loaded=Date.now();busy=false}}).catch(function(){busy=false})})})();`;
+
+/**
+ * Registers the service worker at the site root, which is also where an
+ * archived copy of this page finds it (archive/YYYY-MM-DD/ is two levels down).
+ */
+const OFFLINE = `if("serviceWorker"in navigator){var root=location.pathname.replace(/[^/]*$/,"").replace(/archive\\/[^/]+\\/$/,"");
+navigator.serviceWorker.register(root+"sw.js",{scope:root}).catch(function(){})}`;
+
+/**
+ * Tags stories ([data-story]) that weren't on the page at the reader's last
+ * visit, keyed by each story's first link. The seen list is per browser and
+ * saved when the page is hidden, so a story stays tagged for the whole visit.
+ * Nothing is tagged on a first visit or on archived editions.
+ */
+const NEW_MARKS = `(function(){if(/\\/archive\\//.test(location.pathname))return;var K="seen-stories",seen=null;try{seen=JSON.parse(localStorage.getItem(K)||"null")}catch(e){}
+function all(){return[].slice.call(document.querySelectorAll("[data-story]"))}
+function key(el){var a=el.querySelector("a[href]");return a?a.href:(el.textContent||"").replace(/\\s+/g," ").trim().slice(0,160)}
+function mark(){if(!seen)return;var s={};seen.forEach(function(k){s[k]=1});all().forEach(function(el){if(!s[key(el)])el.setAttribute("data-new","")})}
+function save(){var now=all().map(key),keep=(seen||[]).filter(function(k){return now.indexOf(k)<0});try{localStorage.setItem(K,JSON.stringify(keep.concat(now).slice(-600)))}catch(e){}}
+mark();setTimeout(mark,1500);addEventListener("pagehide",save);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")save()})})();`;
+
+/**
+ * The "Notify me" button, shown only when the build has a VAPID key. The site is
+ * static, so after subscribing it shows the subscription for the reader to paste
+ * into PUSH_SUBSCRIPTIONS on the builder (harness/push.ts sends to it). iOS
+ * allows push only from the home-screen app, so Safari tabs on iOS don't show it.
+ */
+const PUSH = `(function(){var m=document.querySelector('meta[name="vapid-key"]');if(!m||!("serviceWorker"in navigator)||!("PushManager"in window)||!("Notification"in window))return;
+if(/\\/archive\\//.test(location.pathname)||Notification.permission==="denied")return;
+var ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1),standalone=navigator.standalone||matchMedia("(display-mode: standalone)").matches;
+if(ios&&!standalone)return;try{if(localStorage.getItem("push-done")===m.content)return}catch(e){}
+function done(){try{localStorage.setItem("push-done",m.content)}catch(e){}box.remove()}
+function key(s){var p="=".repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/")),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+var css="position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:9;max-width:min(420px,calc(100vw - 24px));background:var(--raised);color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:500 .75rem/1.5 'JetBrains Mono',ui-monospace,monospace";
+var btn="font:inherit;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:999px;padding:3px 10px;margin-left:6px;cursor:pointer";
+var box=document.createElement("div");box.setAttribute("data-push","");box.style.cssText=css;
+box.innerHTML='<span>New edition alerts</span><button style="'+btn+'" data-on>Notify me</button><button style="'+btn+';border-color:var(--border);color:var(--steel)" data-off aria-label="Not now">\\u00d7</button>';
+box.querySelector("[data-off]").onclick=done;
+box.querySelector("[data-on]").onclick=function(){Notification.requestPermission().then(function(p){if(p!=="granted"){done();return}
+return navigator.serviceWorker.ready.then(function(r){return r.pushManager.getSubscription().then(function(s){return s||r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key(m.content)})})}).then(function(s){
+var json=JSON.stringify(s);box.innerHTML='<div>Add this to <b>PUSH_SUBSCRIPTIONS</b> on the builder (a JSON list holds several devices):</div><textarea readonly rows="4" style="width:100%;box-sizing:border-box;margin:8px 0;font:inherit;font-size:.65rem;background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:6px"></textarea><button style="'+btn+';margin:0" data-copy>Copy</button><button style="'+btn+'" data-done>Done</button>';
+var t=box.querySelector("textarea");t.value=json;box.querySelector("[data-copy]").onclick=function(){(navigator.clipboard?navigator.clipboard.writeText(json):Promise.reject()).then(function(){box.querySelector("[data-copy]").textContent="Copied"},function(){t.select()})};
+box.querySelector("[data-done]").onclick=done})}).catch(function(e){box.querySelector("span").textContent="Couldn't subscribe: "+e.message})};
+document.body.appendChild(box)})();`;
+
 /** index.html (server-rendered) plus homepage.js, which hydrates it. */
-export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: string; script: string }> {
+export async function renderSite(
+  tsx: string,
+  builtAt: Date,
+  options: { vapidPublicKey?: string } = { vapidPublicKey: process.env.VAPID_PUBLIC_KEY },
+): Promise<{ html: string; script: string }> {
+  const vapid = options.vapidPublicKey?.trim();
   const markup = renderToString(React.createElement(loadComponent(tsx)));
+  const lead = leadHeadline(markup);
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -84,11 +146,15 @@ export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: st
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="built-at" content="${builtAt.toISOString()}">
-<title>The Context</title>
+${lead ? `<meta name="lead" content="${escapeHtml(lead)}">\n` : ""}${vapid ? `<meta name="vapid-key" content="${escapeHtml(vapid)}">\n` : ""}<title>The Context</title>
 <meta name="apple-mobile-web-app-title" content="The Context">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f5ead0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#292c33" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,7 +168,10 @@ export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: st
 <!-- The page above is complete on its own; hydrating only adds hover states and other interactivity. -->
 <script src="homepage.js?v=${builtAt.getTime()}" defer></script>
 <script>${THEME_TOGGLE}</script>
-<!-- Cloudflare Web Analytics, the same beacon as the rest of cameronsjo.github.io. -->
+<script>${FRESHEN}</script>
+<script>${OFFLINE}</script>
+<script>${NEW_MARKS}</script>
+${vapid ? `<script>${PUSH}</script>\n` : ""}<!-- Cloudflare Web Analytics, the same beacon as the rest of cameronsjo.github.io. -->
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "9db7302de886402680e0838d0f35f7db"}'></script>
 </body>
 </html>
