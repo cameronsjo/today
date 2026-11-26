@@ -35,7 +35,9 @@ export const FEED_FETCH_HEADERS: Record<string, string> = {
 
 const MAX_OUTPUT_CHARS = 120_000;
 const MAX_FEED_ITEMS = 30;
+const MAX_FEED_AGE_DAYS = 7;
 const MAX_SUMMARY_CHARS = 360;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface ExtractedPage {
   title: string;
@@ -144,22 +146,37 @@ function resolveUrl(href: string, baseUrl: string): string {
   }
 }
 
-function formatDate(raw: string): string {
-  if (!raw) return "";
+function parseDate(raw: string): { iso: string; ms: number | null } {
+  if (!raw) return { iso: "", ms: null };
   const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return raw.slice(0, 20);
-  return d.toISOString().slice(0, 10);
+  if (Number.isNaN(d.getTime())) return { iso: raw.slice(0, 20), ms: null };
+  return { iso: d.toISOString().slice(0, 10), ms: d.getTime() };
+}
+
+export interface FeedFormatOptions {
+  maxItems?: number;
+  /** Drop dated entries older than this many days. Set 0 to disable. Default 7. */
+  maxAgeDays?: number;
+  nowMs?: number;
 }
 
 /**
- * Parse an RSS 2.0 or Atom feed into compact Markdown.
- * Returns null if the XML contains no items/entries.
+ * Parse an RSS 2.0 or Atom feed into compact Markdown, dropping stale entries
+ * older than `maxAgeDays` so quiet feeds don't burn context tokens.
+ * Returns null if the XML contains no items/entries at all.
  */
 export function formatFeedToMarkdown(
   xml: string,
   sourceUrl: string,
-  maxItems = MAX_FEED_ITEMS,
+  maxItemsOrOpts: number | FeedFormatOptions = MAX_FEED_ITEMS,
 ): ExtractedPage | null {
+  const opts: FeedFormatOptions =
+    typeof maxItemsOrOpts === "number" ? { maxItems: maxItemsOrOpts } : maxItemsOrOpts;
+  const maxItems = opts.maxItems ?? MAX_FEED_ITEMS;
+  const maxAgeDays = opts.maxAgeDays ?? MAX_FEED_AGE_DAYS;
+  const nowMs = opts.nowMs ?? Date.now();
+  const cutoffMs = maxAgeDays > 0 ? nowMs - maxAgeDays * DAY_MS : null;
+
   const isAtom = /<feed[\s>]/i.test(xml.slice(0, 1000)) && !/<rss[\s>]/i.test(xml.slice(0, 1000));
   const entryTag = isAtom ? "entry" : "item";
   const entryRe = new RegExp(`<${entryTag}\\b[^>]*>([\\s\\S]*?)<\\/${entryTag}>`, "gi");
@@ -168,21 +185,35 @@ export function formatFeedToMarkdown(
   const feedTitle = stripTags(xmlTag(headerSlice, "title")) || sourceUrl;
 
   const lines: string[] = [`# ${feedTitle}`, `Source: ${sourceUrl}`, ""];
+  let totalSeen = 0;
   let count = 0;
+  let latestStaleMs = -Infinity;
+  let latestStaleIso = "";
 
   for (const m of xml.matchAll(entryRe)) {
-    if (count >= maxItems) break;
     const block = m[1];
     const title = stripTags(xmlTag(block, "title"));
     const link = isAtom ? atomLink(block, sourceUrl) : resolveUrl(stripTags(xmlTag(block, "link")), sourceUrl);
     if (!title && !link) continue;
+    totalSeen++;
 
-    const date = formatDate(
+    const rawDate =
       xmlTag(block, "pubDate") ||
-        xmlTag(block, "published") ||
-        xmlTag(block, "updated") ||
-        xmlTag(block, "dc:date"),
-    );
+      xmlTag(block, "published") ||
+      xmlTag(block, "updated") ||
+      xmlTag(block, "dc:date");
+    const parsedDate = parseDate(rawDate);
+
+    if (cutoffMs !== null && parsedDate.ms !== null && parsedDate.ms < cutoffMs) {
+      if (parsedDate.ms > latestStaleMs) {
+        latestStaleMs = parsedDate.ms;
+        latestStaleIso = parsedDate.iso;
+      }
+      continue;
+    }
+
+    if (count >= maxItems) continue;
+
     const rawSummary =
       xmlTag(block, "description") ||
       xmlTag(block, "summary") ||
@@ -193,14 +224,21 @@ export function formatFeedToMarkdown(
     const heading = link ? `[${title || link}](${link})` : title;
     const catMatch = isAtom ? block.match(/<category\b[^>]*\blabel=["'](r\/[^"']+)["']/i) : null;
     const prefix = catMatch ? `**${decodeEntities(catMatch[1])}** · ` : "";
-    lines.push(date ? `- ${prefix}${heading} (${date})` : `- ${prefix}${heading}`);
+    lines.push(parsedDate.iso ? `- ${prefix}${heading} (${parsedDate.iso})` : `- ${prefix}${heading}`);
     if (summary && summary !== title) {
       lines.push(`  ${summary}`);
     }
     count++;
   }
 
-  if (count === 0) return null;
+  if (totalSeen === 0) return null;
+  if (count === 0) {
+    lines.push(
+      latestStaleIso
+        ? `No new entries in the last ${maxAgeDays} days (latest: ${latestStaleIso}).`
+        : `No new entries in the last ${maxAgeDays} days.`,
+    );
+  }
   return {
     title: feedTitle.slice(0, 200),
     content: lines.join("\n").slice(0, MAX_OUTPUT_CHARS),

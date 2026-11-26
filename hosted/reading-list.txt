@@ -18,12 +18,15 @@ https://x.com/OfficialLoganK
 https://x.com/GeminiApp
 
 # Official lab blogs, changelogs, and CLI releases
+https://www.anthropic.com/news
 https://github.com/anthropics/claude-code/releases
 https://deepmind.google/blog/rss.xml
 https://blog.google/technology/google-deepmind/rss/
 https://blog.google/products/gemini/rss/
+https://developers.googleblog.com/feeds/posts/default
 https://ai.google.dev/gemini-api/docs/changelog
 https://github.com/google-gemini/gemini-cli/releases
+https://openai.com/news/rss.xml
 
 # Reddit
 https://old.reddit.com/r/ClaudeAI+LocalLLaMA+MachineLearning+GeminiAI/top/?t=day
@@ -35,7 +38,7 @@ https://arstechnica.com/ai/
 https://techcrunch.com/category/artificial-intelligence/
 https://www.theverge.com/ai-artificial-intelligence
 https://simonwillison.net/
-https://embracethered.com/blog/
+https://embracethered.com/blog/index.xml
 https://www.bleepingcomputer.com/
 
 # Ops
