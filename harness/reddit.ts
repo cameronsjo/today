@@ -8,6 +8,7 @@
  */
 import type { BrowserBridge } from "@homepage/agent-core";
 import { createHostPacer, formatFeedToMarkdown, isFeedContent } from "./extract";
+import { fetchWithRetry } from "./fetch-retry";
 
 const REDDIT_HOSTS = new Set(["reddit.com", "www.reddit.com", "old.reddit.com", "new.reddit.com"]);
 const SUBS = /^[A-Za-z0-9_+]{2,200}$/;
@@ -48,40 +49,24 @@ export function redditFeedFor(url: string): string | null {
 
 type FetchText = (url: string) => Promise<string>;
 
-const RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
-const MAX_RETRIES = 1;
-
-function retryDelayMs(res: Response, attempt: number): number {
-  const retryAfter = res.headers.get("retry-after");
-  if (retryAfter) {
-    const secs = Number(retryAfter);
-    if (Number.isFinite(secs) && secs > 0) return Math.min(secs * 1000, 10_000);
-  }
-  return Math.min(2000 * 2 ** attempt, 10_000);
-}
-
 const defaultFetch: FetchText = async (url) => {
-  for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, {
+  const res = await fetchWithRetry(
+    url,
+    {
       headers: {
         accept: "application/atom+xml, application/rss+xml, application/xml;q=0.9, */*;q=0.5",
         "user-agent": USER_AGENT,
       },
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (res.ok) {
-      const body = await res.text();
-      const ct = res.headers.get("content-type") ?? "";
-      if (!isFeedContent(body, ct)) {
-        throw new Error(`unexpected non-feed response (${ct || "unknown content-type"})`);
-      }
-      return body;
-    }
-    if (attempt >= MAX_RETRIES || !RETRY_STATUSES.has(res.status)) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    await new Promise((r) => setTimeout(r, retryDelayMs(res, attempt)));
+    },
+    { attempts: 2, timeoutMs: 15_000 },
+  );
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.text();
+  const ct = res.headers.get("content-type") ?? "";
+  if (!isFeedContent(body, ct)) {
+    throw new Error(`unexpected non-feed response (${ct || "unknown content-type"})`);
   }
+  return body;
 };
 
 interface ArcticShiftPost {

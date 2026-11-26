@@ -8,6 +8,7 @@
  * and reports the issue URL as finalUrl so the agent links to the real issue.
  */
 import type { BrowserBridge } from "@homepage/agent-core";
+import { fetchWithRetry } from "./fetch-retry";
 
 const SECTION = /^[a-z][a-z0-9-]{0,30}$/;
 
@@ -34,7 +35,7 @@ export function newestIssue(rss: string, edition: string): string | null {
 type FetchText = (url: string) => Promise<string>;
 
 const defaultFetch: FetchText = async (url) => {
-  const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  const res = await fetchWithRetry(url, {}, { timeoutMs: 15_000 });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();
 };

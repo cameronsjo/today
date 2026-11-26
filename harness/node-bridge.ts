@@ -9,6 +9,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { BrowserBridge, KVStore, RawSiteMetadata } from "@homepage/agent-core";
+import { fetchWithRetry } from "./fetch-retry";
 import {
   BROWSER_FETCH_HEADERS,
   FEED_FETCH_HEADERS,
@@ -107,7 +108,7 @@ export function createNodeBridge(opts: NodeBridgeOptions = {}): BrowserBridge {
   async function tryFetchFeed(feedUrl: string, reportedUrl: string): Promise<{ url: string; title: string; html: string } | null> {
     try {
       const res = await pace(feedUrl, () =>
-        fetchFn(feedUrl, { headers: FEED_FETCH_HEADERS, signal: AbortSignal.timeout(15_000) }),
+        fetchWithRetry(feedUrl, { headers: FEED_FETCH_HEADERS }, { fetchImpl: fetchFn, timeoutMs: 15_000 }),
       );
       if (!res.ok) return null;
       const body = await res.text();
@@ -135,10 +136,7 @@ export function createNodeBridge(opts: NodeBridgeOptions = {}): BrowserBridge {
         urls.map(async (url) => {
           try {
             const res = await pace(url, () =>
-              fetchFn(url, {
-                headers: BROWSER_FETCH_HEADERS,
-                signal: AbortSignal.timeout(20_000),
-              }),
+              fetchWithRetry(url, { headers: BROWSER_FETCH_HEADERS }, { fetchImpl: fetchFn, timeoutMs: 20_000 }),
             );
 
             // If an HTML listing is bot-blocked (403), probe standard feed paths automatically.
