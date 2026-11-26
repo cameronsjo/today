@@ -37,6 +37,7 @@ flowchart LR
 
 - **Failed builds are non-destructive:** `docker/entrypoint.sh` only runs `publish-pages.sh` if `pnpm site:build` exits `0`. Any API or render error leaves yesterday's edition live on `gh-pages`.
 - **Single-commit `gh-pages` with growing archive:** `publish-pages.sh` shallow-clones the existing `gh-pages` branch to carry forward `archive/`, archives the previous `index.html` + `homepage.js` under its `built-at` date, writes today's copy to `archive/YYYY-MM-DD/`, regenerates `archive/index.html`, and force-pushes a single fresh commit.
+  - **Carry-forward only happens when the clone succeeds.** The clone runs as an `if` condition with stderr discarded, so the script cannot tell a missing `gh-pages` branch (first publish, which correctly starts an empty archive) from a failed clone (network or deploy-key error). In the failed-clone case it publishes only today's edition, and the force-push replaces `gh-pages` without the earlier `archive/` editions.
 - **No internal addresses leak to the model:** `withRsshub` rewrites `https://x.com/<handle>` to `$RSSHUB_URL/twitter/user/<handle>` at fetch time and maps results and errors back to `https://x.com/<handle>` before returning to `agent-core`.
 
 ## Bridge Chain
