@@ -13,12 +13,20 @@ https://news.ycombinator.com/
 https://x.com/ClaudeDevs
 https://x.com/bcherny
 https://x.com/trq212
+https://x.com/GoogleDeepMind
+https://x.com/OfficialLoganK
+https://x.com/GeminiApp
 
-# Claude Code releases (official updates without needing X)
+# Official lab blogs, changelogs, and CLI releases
 https://github.com/anthropics/claude-code/releases
+https://deepmind.google/blog/rss.xml
+https://blog.google/technology/google-deepmind/rss/
+https://blog.google/products/gemini/rss/
+https://ai.google.dev/gemini-api/docs/changelog
+https://github.com/google-gemini/gemini-cli/releases
 
 # Reddit
-https://old.reddit.com/r/ClaudeAI+LocalLLaMA+MachineLearning/top/?t=day
+https://old.reddit.com/r/ClaudeAI+LocalLLaMA+MachineLearning+GeminiAI/top/?t=day
 https://old.reddit.com/r/netsec+cybersecurity+blueteamsec/top/?t=day
 https://old.reddit.com/r/devops+sre+sysadmin+selfhosted+homelab/top/?t=day
 
