@@ -76,8 +76,8 @@ async function main() {
   writeFileSync(join(SITE_DIR, "index.html"), html);
   writeFileSync(join(SITE_DIR, "homepage.js"), script);
   writeFileSync(join(SITE_DIR, "homepage.tsx"), tsx);
-  // The home-screen icon and favicons the page links to (see hosted/icon/).
-  cpSync(join(ROOT, "hosted/icon"), SITE_DIR, { recursive: true });
+  // Icons, the web app manifest and other fixed files the page links to (see hosted/static/).
+  cpSync(join(ROOT, "hosted/static"), SITE_DIR, { recursive: true });
   console.log(`wrote ${SITE_DIR}/index.html (${html.length}b)`);
 }
 

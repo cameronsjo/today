@@ -74,6 +74,16 @@ function label(){document.querySelectorAll("[data-theme-toggle]").forEach(functi
 document.addEventListener("click",function(e){if(!e.target.closest||!e.target.closest("[data-theme-toggle]"))return;r.dataset.theme=night()?"ivory":"night";try{localStorage.setItem("theme",r.dataset.theme)}catch(x){}label()});
 label();setTimeout(label,1500)})();`;
 
+/**
+ * Opened from the home screen, the page runs full-screen with no reload
+ * button, and iOS keeps it alive for days. When it comes back to the front
+ * after a while, check whether a newer edition is out and reload if so.
+ */
+const FRESHEN = `(function(){var loaded=Date.now(),busy=false;function built(d){var m=d.querySelector('meta[name="built-at"]');return m&&m.content}
+document.addEventListener("visibilitychange",function(){if(document.visibilityState!=="visible"||busy||Date.now()-loaded<15*60*1000)return;busy=true;
+fetch(location.href,{cache:"no-store"}).then(function(r){return r.ok?r.text():""}).then(function(t){var b=t&&built(new DOMParser().parseFromString(t,"text/html"));
+if(b&&b!==built(document))location.reload();else{loaded=Date.now();busy=false}}).catch(function(){busy=false})})})();`;
+
 /** index.html (server-rendered) plus homepage.js, which hydrates it. */
 export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: string; script: string }> {
   const markup = renderToString(React.createElement(loadComponent(tsx)));
@@ -89,6 +99,10 @@ export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: st
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f5ead0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#292c33" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,6 +116,7 @@ export async function renderSite(tsx: string, builtAt: Date): Promise<{ html: st
 <!-- The page above is complete on its own; hydrating only adds hover states and other interactivity. -->
 <script src="homepage.js?v=${builtAt.getTime()}" defer></script>
 <script>${THEME_TOGGLE}</script>
+<script>${FRESHEN}</script>
 <!-- Cloudflare Web Analytics, the same beacon as the rest of cameronsjo.github.io. -->
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "9db7302de886402680e0838d0f35f7db"}'></script>
 </body>
