@@ -72,6 +72,8 @@ token: list them as `https://x.com/<handle>` and set `RSSHUB_URL`.
 The page is public to anyone with the URL (it's marked `noindex`), but it only
 contains what it read from public pages. Build it locally with
 `ANTHROPIC_API_KEY=… pnpm site:build`; the output lands in `site/`.
+See **[docs/hosted-architecture.md](docs/hosted-architecture.md)** for diagrams of
+the hosted pipeline, bridge chain, and automatic content/feed extractor.
 
 ## Install
 
