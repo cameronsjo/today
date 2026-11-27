@@ -1,5 +1,7 @@
 # Architecture
 
+> Running the daily hosted container instead of the Chrome extension? See [docs/hosted-architecture.md](docs/hosted-architecture.md) for the hosted pipeline, bridge chain, automatic content/feed extraction, and `gh-pages` publishing flow.
+
 There is no server. Three parties are involved, and you run one of them.
 
 | | Runs where | Does what |
