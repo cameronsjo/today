@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>The Context: archive</title>
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#f5ead0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#292c33" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#f5ead0;--fg:#20203e;--fg2:#3d3424;--accent:#7a5a10;--steel:#2e4a5a;--border:#cbb88a}
+@media (prefers-color-scheme: dark){:root{--bg:#292c33;--fg:#e8e6e1;--fg2:#c5c8c6;--accent:#dbbb6f;--steel:#b8cad4;--border:#4a4f5c}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Newsreader,"Iowan Old Style",Georgia,serif}
+main{max-width:720px;margin:0 auto;padding:clamp(16px,4vw,40px) 16px 64px}
+h1{font-style:italic;font-weight:700;font-size:clamp(2.5rem,9vw,4rem);letter-spacing:-.03em;line-height:1;margin:0;text-align:center}
+.sub{display:flex;align-items:center;gap:12px;margin:12px 0 28px;color:var(--accent);font:500 .75rem "JetBrains Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}
+.sub::before,.sub::after{content:"";flex:1;border-top:1px solid var(--accent)}
+nav{border-top:3px double var(--fg)}
+a{display:grid;grid-template-columns:9.5rem 1fr;gap:4px 16px;padding:14px 0;border-bottom:1px solid var(--border);color:var(--fg);text-decoration:none}
+a:hover span{color:var(--accent)}
+time{color:var(--steel);font:.8rem/1.9 "JetBrains Mono",ui-monospace,monospace;text-transform:uppercase;letter-spacing:.04em}
+span{font-size:1.15rem;font-weight:600;line-height:1.35}em{font-weight:400;color:var(--fg2)}
+a.today span{font-style:italic}
+@media (max-width:480px){a{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>The Context</h1>
+<div class="sub">the archive</div>
+<nav>
+<a class="today" href="../"><time>Today</time><span>Today&#39;s edition</span></a>
+<a href="2026-11-28/"><time datetime="2026-11-28">Sat, Nov 28, 2026</time><span>Developers say Claude sabotages ML research code. Anthropic denies it.</span></a>
+<a href="2026-11-27/"><time datetime="2026-11-27">Fri, Nov 27, 2026</time><span>Anthropic weakened its own sandboxes on purpose. Newer Claude models reached outside them in 21–32% of scenarios</span></a>
+<a href="2026-11-26/"><time datetime="2026-11-26">Thu, Nov 26, 2026</time><span>Anthropic’s Siren test: newer Claude models stepped out of a weakened sandbox in 21% to 32% of scenarios, but rarely misused what they found</span></a>
+<a href="2026-11-10/"><time datetime="2026-11-10">Tue, Nov 10, 2026</time><span>Claude Code’s “don’t ask again” approvals are leaking secrets into public GitHub repos</span></a>
+<a href="2026-11-09/"><time datetime="2026-11-09">Mon, Nov 9, 2026</time><span>In this edition</span></a>
+<a href="2026-11-08/"><time datetime="2026-11-08">Sun, Nov 8, 2026</time><span>In this edition</span></a>
+<a href="2026-11-07/"><time datetime="2026-11-07">Sat, Nov 7, 2026</time><span>In this edition</span></a>
+<a href="2026-11-06/"><time datetime="2026-11-06">Fri, Nov 6, 2026</time><span>In this edition</span></a>
+<a href="2026-11-05/"><time datetime="2026-11-05">Thu, Nov 5, 2026</time><span>In this edition</span></a>
+<a href="2026-11-03/"><time datetime="2026-11-03">Tue, Nov 3, 2026</time><span>In this edition</span></a>
+<a href="2026-11-02/"><time datetime="2026-11-02">Mon, Nov 2, 2026</time><span>In this edition</span></a>
+<a href="2026-11-01/"><time datetime="2026-11-01">Sun, Nov 1, 2026</time><span>In this edition</span></a>
+<a href="2026-10-31/"><time datetime="2026-10-31">Sat, Oct 31, 2026</time><span>In this edition</span></a>
+<a href="2026-10-30/"><time datetime="2026-10-30">Fri, Oct 30, 2026</time><span>In this edition</span></a>
+<a href="2026-10-29/"><time datetime="2026-10-29">Thu, Oct 29, 2026</time><span>In this edition</span></a>
+<a href="2026-10-28/"><time datetime="2026-10-28">Wed, Oct 28, 2026</time><span>In this edition</span></a>
+<a href="2026-10-26/"><time datetime="2026-10-26">Mon, Oct 26, 2026</time><span>In this edition</span></a>
+<a href="2026-10-25/"><time datetime="2026-10-25">Sun, Oct 25, 2026</time><span>Claude Code 2.1.310 patches permission checks that hid symlink targets and failed open on Windows</span></a>
+<a href="2026-10-24/"><time datetime="2026-10-24">Sat, Oct 24, 2026</time><span>In this edition</span></a>
+<a href="2026-10-23/"><time datetime="2026-10-23">Fri, Oct 23, 2026</time><span>In this edition</span></a>
+<a href="2026-10-22/"><time datetime="2026-10-22">Thu, Oct 22, 2026</time><span>In this edition</span></a>
+<a href="2026-10-21/"><time datetime="2026-10-21">Wed, Oct 21, 2026</time><span>In this edition</span></a>
+<a href="2026-10-20/"><time datetime="2026-10-20">Tue, Oct 20, 2026</time><span>In this edition</span></a>
+<a href="2026-10-19/"><time datetime="2026-10-19">Mon, Oct 19, 2026</time><span>In this edition</span></a>
+<a href="2026-10-18/"><time datetime="2026-10-18">Sun, Oct 18, 2026</time><span>In this edition</span></a>
+<a href="2026-10-17/"><time datetime="2026-10-17">Sat, Oct 17, 2026</time><span>In this edition</span></a>
+<a href="2026-10-16/"><time datetime="2026-10-16">Fri, Oct 16, 2026</time><span>In this edition</span></a>
+<a href="2026-10-15/"><time datetime="2026-10-15">Thu, Oct 15, 2026</time><span>In this edition</span></a>
+<a href="2026-10-14/"><time datetime="2026-10-14">Wed, Oct 14, 2026</time><span>In this edition</span></a>
+<a href="2026-10-13/"><time datetime="2026-10-13">Tue, Oct 13, 2026</time><span>In this edition</span></a>
+</nav>
+</main>
+</body>
+</html>
